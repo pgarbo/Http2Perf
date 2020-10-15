@@ -14,7 +14,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.Runtime;
 using System.Text.Json;
 using System.Threading;
@@ -309,7 +308,7 @@ namespace GrpcSampleClient
                 Method = HttpMethod.Post,
                 Content = new StreamContent(memStream),
                 Version = httpVersion,
-                VersionPolicy = HttpVersionPolicy.RequestVersionOrHigher,
+                //VersionPolicy = HttpVersionPolicy.RequestVersionOrHigher,
                 RequestUri = new Uri("/protobuf", UriKind.Relative)
             };
             httpRequest.Content.Headers.TryAddWithoutValidation("Content-Type", "application/octet-stream");
@@ -325,13 +324,14 @@ namespace GrpcSampleClient
                 Method = HttpMethod.Post,
                 Content = new StringContent(JsonSerializer.Serialize(request)),
                 Version = httpVersion,
-                VersionPolicy = HttpVersionPolicy.RequestVersionOrHigher,
+                //VersionPolicy = HttpVersionPolicy.RequestVersionOrHigher,
                 RequestUri = new Uri("/api/greeter/sayhello", UriKind.Relative)
             };
             httpRequest.Content.Headers.TryAddWithoutValidation("Content-Type", "application/json");
             using var httpResponse = await client.SendAsync(httpRequest);
             //Debugger.Launch();
-            return await httpResponse.Content.ReadFromJsonAsync<HelloReply>();
+            var s =  await httpResponse.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<HelloReply>(s);
         }
 
         private const int HeaderSize = 5;
@@ -341,7 +341,7 @@ namespace GrpcSampleClient
         {
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, RawGrpcUri);
             httpRequest.Version = HttpVersion.Version20;
-            httpRequest.VersionPolicy = HttpVersionPolicy.RequestVersionOrHigher;
+            //httpRequest.VersionPolicy = HttpVersionPolicy.RequestVersionOrHigher;
 
             if (!streamRequest)
             {
