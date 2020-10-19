@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "GrpcSampleClient": {
+      "commandName": "Project",
+      "commandLineArgs": "h1 1 true"
+    }
+  }
+}

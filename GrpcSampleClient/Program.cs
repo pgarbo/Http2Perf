@@ -31,19 +31,22 @@ namespace GrpcSampleClient
         private static readonly Dictionary<int, HttpClient> HttpClientCache = new Dictionary<int, HttpClient>();
         private static readonly Dictionary<int, HttpMessageInvoker> HttpMessageInvokerCache = new Dictionary<int, HttpMessageInvoker>();
         private static readonly ConcurrentDictionary<int, SignalRStreamingCall> SignalRCache = new ConcurrentDictionary<int, SignalRStreamingCall>();
-        private static Uri RawGrpcUri= new Uri($"http://localhost:5001/greet.Greeter/SayHello");
+        private static string Host = "localhost";
+        private static Uri RawGrpcUri= new Uri($"http://{Host}:5001/greet.Greeter/SayHello");
         private static bool ClientPerThread;
 
         static async Task Main(string[] args)
         {
             ClientPerThread = bool.Parse(args[2]);
+            if (args.Length > 3 && !string.IsNullOrWhiteSpace(args[3]))
+                Host = args[3];
             Console.WriteLine("ClientPerThread: " + ClientPerThread);
+            Console.WriteLine("Host:" + Host); 
             var stopwatch = Stopwatch.StartNew();
             long successCounter = 0;
             long errorCounter = 0;
             long lastElapse = 0;
             Exception lastError = null;
-
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2Support", true);
             new Thread(() =>
@@ -155,7 +158,7 @@ namespace GrpcSampleClient
             }
             if (!GrpcClientCache.TryGetValue(i, out var client))
             {
-                client = GetGrpcNetClient("localhost", 5001);
+                client = GetGrpcNetClient($"{Host}", 5001);
                 GrpcClientCache.Add(i, client);
             }
 
@@ -170,7 +173,7 @@ namespace GrpcSampleClient
             }
             if (!GrpcClientCache.TryGetValue(i, out var client))
             {
-                client = GetGrpcCoreClient("localhost", 5001);
+                client = GetGrpcCoreClient($"{Host}", 5001);
                 GrpcClientCache.Add(i, client);
             }
 
@@ -182,7 +185,7 @@ namespace GrpcSampleClient
             if (!SignalRCache.TryGetValue(i, out var state))
             {
                 var builder = new HubConnectionBuilder();
-                builder.WithUrl("http://localhost:5000/greeterhub");
+                builder.WithUrl($"http://{Host}:5000/greeterhub");
                 builder.AddMessagePackProtocol();
                 var hubConnection = builder.Build();
                 await hubConnection.StartAsync();
@@ -230,7 +233,8 @@ namespace GrpcSampleClient
             }
             if (!HttpClientCache.TryGetValue(i, out var client))
             {
-                client = new HttpClient { BaseAddress = new Uri("http://localhost:" + port) };
+                var baseAddress = new Uri($"http://{Host}:" + port);
+                client = new HttpClient { BaseAddress = baseAddress };
                 HttpClientCache.Add(i, client);
             }
 
@@ -316,7 +320,8 @@ namespace GrpcSampleClient
             httpRequest.Content.Headers.TryAddWithoutValidation("Content-Type", "application/octet-stream");
             using var httpResponse = await client.SendAsync(httpRequest);
             var responseStream = await httpResponse.Content.ReadAsStreamAsync();
-            return HelloReply.Parser.ParseDelimitedFrom(responseStream);
+            var response = HelloReply.Parser.ParseDelimitedFrom(responseStream);
+            return response;
         }
 
         private static async Task<HelloReply> MakeJsonHttpCall(HelloRequest request, HttpClient client, Version httpVersion)
