@@ -12,6 +12,7 @@ namespace GrpcSampleServer
         static GreeterService()
         {
             _reply = new HelloReply();
+            _reply.Message = "Hello";
             for (var i = 0; i < 1000; i++)
             {
                 _reply.Payload.Add($"{DateTime.Now.Ticks}");
@@ -20,22 +21,23 @@ namespace GrpcSampleServer
 
         public override Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
         {
-            return Task.FromResult(new HelloReply
-            {
-                Message = "Hello " + request.Name
-            });
+            //    new HelloReply
+            //{
+            //    Message = "Hello " + request.Name
+            //}
+            return Task.FromResult(_reply);
         }
 
         public override async Task SayHelloBiDi(IAsyncStreamReader<HelloRequest> requestStream, IServerStreamWriter<HelloReply> responseStream, ServerCallContext context)
         {
             while (await requestStream.MoveNext())
             {
-                var helloReply = new HelloReply
-                {
-                    Message = "Hello " + requestStream.Current.Name
-                };
+                //var helloReply = new HelloReply
+                //{
+                //    Message = "Hello " + requestStream.Current.Name
+                //};
 
-                await responseStream.WriteAsync(helloReply);
+                await responseStream.WriteAsync(_reply);
             }
         }
     }
