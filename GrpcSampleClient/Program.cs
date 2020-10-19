@@ -44,6 +44,8 @@ namespace GrpcSampleClient
             long lastElapse = 0;
             Exception lastError = null;
 
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2Support", true);
             new Thread(() =>
             {
                 long pastRequests = 0;
